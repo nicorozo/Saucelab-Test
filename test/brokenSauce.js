@@ -1,5 +1,6 @@
 const {Builder, By, Key, until} = require('selenium-webdriver')
 const utils = require('./utils')
+const chrome = require('selenium-webdriver/chrome');
 
 const SAUCE_USERNAME = process.env.SAUCE_USERNAME;
 const SAUCE_ACCESS_KEY = process.env.SAUCE_ACCESS_KEY;
@@ -20,24 +21,27 @@ describe('Broken Sauce', function () {
     it('should go to Google and click Sauce', async function () {
 
         try {
-            let driver = await new Builder().withCapabilities(utils.brokenCapabilities)
-                    .usingServer(ONDEMAND_URL).build();
+            const chromeOptions = new chrome.Options();
+            chromeOptions.addArguments('--disable-blink-features=AutomationControlled');
+            chromeOptions.excludeSwitches(['enable-automation']);
 
-        await driver.get("https://www.google.com");
-        // If you see a German or English GDPR modal on google.com you 
-        // will have to code around that or use the us-west-1 datacenter.
-        // You can investigate the modal elements using a Live Test(https://app.saucelabs.com/live/web-testing)
+            let driver = await new Builder().withCapabilities(utils.brokenCapabilities).setChromeOptions(chromeOptions).usingServer(ONDEMAND_URL).build();
 
-
-        let search = await driver.findElement(By.name("Search"));
-        await search.sendKeys("Sauce Labs");
-        
-        let button = await driver.findElement(By.name("btnK"))
-        await button.click()
-
-        let page = await driver.findElement(By.partialLinkText("sauce"));
-
-        await driver.quit();
+            await driver.get("https://www.google.com");
+            // If you see a German or English GDPR modal on google.com you 
+            // will have to code around that or use the us-west-1 datacenter.
+            // You can investigate the modal elements using a Live Test(https://app.saucelabs.com/live/web-testing)
+    
+    
+            let search = await driver.findElement(By.name("Search"));
+            await search.sendKeys("Sauce Labs");
+            
+            let button = await driver.findElement(By.name("btnK"))
+            await button.click()
+    
+            let page = await driver.findElement(By.partialLinkText("sauce"));
+    
+            await driver.quit();
         } catch (err) {
             // hack to make this pass for Gitlab CI
             // candidates can ignore this
