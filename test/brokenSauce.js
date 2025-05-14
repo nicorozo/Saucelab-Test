@@ -18,20 +18,21 @@ const ONDEMAND_URL = `https://${SAUCE_USERNAME}:${SAUCE_ACCESS_KEY}@ondemand.eu-
  */
 
 describe("Broken Sauce", function () {
+  let driver;
+  before(async function () {
+    const chromeOptions = new chrome.Options();
+    chromeOptions.addArguments("--disable-blink-features=AutomationControlled");
+    chromeOptions.excludeSwitches(["enable-automation"]);
+
+    driver = await new Builder()
+      .withCapabilities(utils.brokenCapabilities)
+      .setChromeOptions(chromeOptions)
+      .usingServer(ONDEMAND_URL)
+      .build();
+  });
+
   it("should go to Google and click Sauce", async function () {
     try {
-      const chromeOptions = new chrome.Options();
-      chromeOptions.addArguments(
-        "--disable-blink-features=AutomationControlled"
-      );
-      chromeOptions.excludeSwitches(["enable-automation"]);
-
-      let driver = await new Builder()
-        .withCapabilities(utils.brokenCapabilities)
-        .setChromeOptions(chromeOptions)
-        .usingServer(ONDEMAND_URL)
-        .build();
-
       await driver.get("https://www.google.com");
       // If you see a German or English GDPR modal on google.com you
       // will have to code around that or use the us-west-1 datacenter.
@@ -42,8 +43,10 @@ describe("Broken Sauce", function () {
       //type and press enter
       await search.sendKeys("Sauce Labs", Key.RETURN);
 
-      /* After this step I faced reCAPTCHA, I tried to look for solutions
-      to skip it but at the end it might be more ethical to ask first */
+      /* Everything was fine until a wild reCAPTCHA appeared.
+      Unfortunately I dont know yet how to pass through it.
+      However, I put the steps that should work after google search entered.
+      */
 
       //locate by href value and click on https://saucelabs.com/ link
       /* const hrefValue = "https://saucelabs.com/";
@@ -52,7 +55,7 @@ describe("Broken Sauce", function () {
       );
       await sauceLink.click();
 
-      await driver.quit(); */
+       */
     } catch (err) {
       // hack to make this pass for Gitlab CI
       // candidates can ignore this
@@ -63,5 +66,29 @@ describe("Broken Sauce", function () {
         throw err;
       }
     }
+  });
+
+  it("Should go to https://saucelabs.com/, hover over 'Developers' and then clicks the 'Documentation' link", async function () {
+    await driver.get("https://saucelabs.com/");
+    //tried to look for element by classname but its not accurate as Mui dynamically generates classes
+    // locate elements by xpath and text content
+    const spanText = "Developers";
+    const developerSpan = await driver.findElement(
+      By.xpath(`//span[text()="${spanText}"]`)
+    );
+    const documentationText = "Documentation";
+    const documentationSpan = await driver.findElement(
+      By.xpath(`//span[text()="${documentationText}"]`)
+    );
+    //Perform actions
+    await driver
+      .actions()
+      .move({ origin: developerSpan })
+      .pause(1000)
+      .perform();
+
+    await documentationSpan.click();
+
+    await driver.quit();
   });
 });
